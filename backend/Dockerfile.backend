@@ -1,0 +1,27 @@
+# Dockerfile.backend (수정 완료)
+FROM python:3.10-slim
+
+# 작업 디렉토리
+WORKDIR /app
+
+# backend 폴더 전체 복사
+COPY ./backend ./backend
+
+# 시스템 의존성 설치
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    gcc g++ libgl1 libglib2.0-0 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# pip 업그레이드
+RUN pip install --upgrade pip
+
+# FastAPI 등 의존성 설치
+RUN pip install --no-cache-dir --prefer-binary \
+    fastapi uvicorn sqlalchemy pymysql pillow python-multipart requests cryptography
+
+# PyTorch CPU 설치
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# 실행 (경로 수정: backend.app.main)
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

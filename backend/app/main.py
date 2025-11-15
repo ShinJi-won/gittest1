@@ -1,0 +1,42 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.db import engine
+from backend.models import Base
+from backend.routers import predict
+import time
+from sqlalchemy.exc import OperationalError
+
+# DB 연결 대기
+def wait_for_db():
+    while True:
+        try:
+            with engine.connect() as conn:
+                print("Database connected successfully!")
+                break
+        except OperationalError:
+            print("⏳ Waiting for database...")
+            time.sleep(1)
+
+wait_for_db()
+
+
+# DB 테이블 생성
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="AI Image Classifier API")
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 라우터 등록
+app.include_router(predict.router)
+
+@app.get("/")
+def root():
+    return {"message": "AI Image Classifier API is running 🚀"}
